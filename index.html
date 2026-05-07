@@ -797,7 +797,12 @@ function sendMsg() {
   var tid = appendThinking();
   fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': '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',
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
     body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: SYSTEM, messages: chatHistory })
   }).then(function(r) { return r.json(); }).then(function(d) {
     var reply = (d.content || []).filter(function(b) { return b.type === 'text'; }).map(function(b) { return b.text; }).join('');
