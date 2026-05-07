@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Silencer Shop — FY2026 Sales Intelligence Dashboard</title>
+<style>
+  :root {
+    --red: #CC0000;
+    --red-light: #FCEBEB;
+    --red-dark: #A32D2D;
+    --green-light: #EAF3DE;
+    --green: #3B6D11;
+    --amber-light: #FAEEDA;
+    --amber: #854F0B;
+    --blue-light: #E6F1FB;
+    --blue: #185FA5;
+    --bg: #ffffff;
+    --bg2: #f5f5f3;
+    --bg3: #efefec;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --text: #1a1a1a;
+    --text2: #666660;
+    --text3: #999994;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg3); color: var(--text); font-size: 14px; }
+  .shell { max-width: 1100px; margin: 0 auto; background: var(--bg); min-height: 100vh; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid var(--border); background: var(--bg); }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-mark { width: 34px; height: 34px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .logo-mark svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .logo-text { font-size: 15px; font-weight: 600; color: var(--text); }
+  .logo-sub { font-size: 11px; color: var(--text2); margin-top: 1px; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .sync-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 500; background: var(--green-light); color: var(--green); border: 1px solid rgba(59,109,17,0.2); }
+  .sync-badge.syncing { background: var(--amber-light); color: var(--amber); border-color: rgba(133,79,11,0.2); }
+  .sync-badge.error { background: var(--red-light); color: var(--red-dark); border-color: rgba(163,45,45,0.2); }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .sync-dot.spin { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .badge-conf { font-size: 10px; padding: 3px 9px; border-radius: 4px; background: var(--red-light); color: var(--red-dark); font-weight: 600; letter-spacing: 0.06em; }
+  .btn { font-size: 12px; padding: 6px 14px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); cursor: pointer; transition: background 0.15s; font-family: inherit; display: inline-flex; align-items: center; gap: 5px; }
+  .btn:hover { background: var(--bg2); }
+  .btn.active { background: var(--red); color: #fff; border-color: var(--red); }
+  .user-bar { display: flex; align-items: center; gap: 10px; padding: 9px 24px; background: var(--bg2); border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text2); }
+  .user-bar input { font-size: 12px; padding: 4px 10px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); outline: none; width: 180px; font-family: inherit; }
+  .user-bar input:focus { border-color: var(--red); }
+  .nav { display: flex; gap: 0; padding: 0 24px; border-bottom: 1px solid var(--border); background: var(--bg); overflow-x: auto; }
+  .nav-btn { padding: 11px 16px; font-size: 13px; color: var(--text2); background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; font-family: inherit; transition: color 0.15s; }
+  .nav-btn:hover { color: var(--text); }
+  .nav-btn.active { color: var(--text); border-bottom-color: var(--red); font-weight: 600; }
+  .content { padding: 24px; }
+  .hidden { display: none !important; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .kpi { background: var(--bg2); border-radius: var(--radius); padding: 16px 18px; }
+  .kpi-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; font-weight: 600; }
+  .kpi-val { font-size: 22px; font-weight: 700; color: var(--text); }
+  .kpi-val.accent { color: var(--red); }
+  .kpi-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+  .card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; }
+  .card-title { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 14px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .full-card { margin-bottom: 18px; }
+  .theme-item { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+  .theme-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; }
+  .theme-icon.red { background: var(--red-light); }
+  .theme-icon.amber { background: var(--amber-light); }
+  .theme-icon.green { background: var(--green-light); }
+  .theme-icon.blue { background: var(--blue-light); }
+  .theme-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .theme-desc { font-size: 12px; color: var(--text2); margin-top: 2px; line-height: 1.5; }
+  .acct-row-bar { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-bottom: 1px solid var(--border); cursor: pointer; border-radius: 6px; transition: background 0.1s; }
+  .acct-row-bar:last-child { border-bottom: none; }
+  .acct-row-bar:hover { background: var(--bg2); }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .acct-name-bar { font-size: 13px; font-weight: 600; color: var(--text); min-width: 95px; }
+  .acct-bar-wrap { flex: 1; height: 6px; background: var(--bg2); border-radius: 3px; overflow: hidden; }
+  .acct-bar { height: 100%; border-radius: 3px; background: var(--red); }
+  .acct-rev-label { font-size: 12px; color: var(--text2); min-width: 80px; text-align: right; }
+  .pill { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .pill.live { background: var(--green-light); color: var(--green); }
+  .pill.tbd { background: var(--amber-light); color: var(--amber); }
+  .pill.info { background: var(--blue-light); color: var(--blue); cursor: pointer; }
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { font-size: 11px; color: var(--text2); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 600; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.04em; }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--bg2); }
+  tfoot td { background: var(--bg2); font-weight: 700; border-top: 1px solid var(--border2); }
+  .editable { cursor: pointer; border-radius: 4px; padding: 2px 5px; transition: background 0.12s; display: inline-block; }
+  .editable:hover { background: var(--bg2); outline: 1px dashed var(--border2); }
+  .editable:focus { outline: 2px solid var(--red); background: var(--bg2); border-radius: 4px; }
+  .edit-hint { font-size: 11px; color: var(--blue); background: var(--blue-light); border-radius: var(--radius); padding: 8px 14px; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(24,95,165,0.15); }
+  .detail-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .detail-kpi { background: var(--bg2); border-radius: var(--radius); padding: 14px 16px; }
+  .detail-kpi-label { font-size: 10px; color: var(--text2); margin-bottom: 5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; display: flex; align-items: center; justify-content: space-between; }
+  .detail-kpi-val { font-size: 19px; font-weight: 700; color: var(--text); }
+  .edit-field-btn { font-size: 11px; color: var(--blue); background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; }
+  .notes-box { background: var(--bg2); border-radius: var(--radius); padding: 14px 16px; font-size: 13px; color: var(--text); line-height: 1.7; min-height: 70px; }
+  .notes-textarea { width: 100%; background: var(--bg2); border: 2px solid var(--red); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; color: var(--text); font-family: inherit; line-height: 1.7; resize: vertical; min-height: 90px; outline: none; }
+  .action-btns { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .scenario-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .scenario-row label { font-size: 13px; color: var(--text2); min-width: 150px; }
+  .scenario-row input[type=range] { flex: 1; accent-color: var(--red); }
+  .scenario-val { font-size: 13px; font-weight: 600; min-width: 65px; text-align: right; color: var(--text); }
+  .scenario-out { background: var(--bg2); border-radius: var(--radius); padding: 16px 18px; margin-top: 12px; }
+  .scenario-nums { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .snum-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .snum-val { font-size: 18px; font-weight: 700; color: var(--text); }
+  .snum-delta { font-size: 11px; margin-top: 3px; }
+  .pos { color: var(--green); font-weight: 600; }
+  .neg { color: var(--red-dark); font-weight: 600; }
+  .muted { color: var(--text3); }
+  .changelog-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .changelog-item:last-child { border-bottom: none; }
+  .cl-time { color: var(--text3); font-size: 11px; min-width: 110px; flex-shrink: 0; }
+  .cl-user { color: var(--red); font-weight: 600; min-width: 110px; flex-shrink: 0; }
+  .cl-msg { color: var(--text); flex: 1; }
+  .chat-area { display: flex; flex-direction: column; height: calc(100vh - 220px); min-height: 500px; }
+  .quick-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .quick-btn { font-size: 12px; padding: 5px 12px; border: 1px solid var(--border2); border-radius: 20px; background: var(--bg); color: var(--text2); cursor: pointer; transition: all 0.15s; font-family: inherit; }
+  .quick-btn:hover { background: var(--bg2); color: var(--text); }
+  .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding: 4px 0 16px; }
+  .msg { display: flex; gap: 10px; align-items: flex-start; }
+  .msg.user { flex-direction: row-reverse; }
+  .msg-av { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .msg-av.ai { background: var(--red); color: #fff; }
+  .msg-av.user { background: var(--bg2); color: var(--text2); border: 1px solid var(--border); }
+  .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: var(--radius-lg); font-size: 13px; line-height: 1.65; }
+  .msg-bubble.ai { background: var(--bg2); color: var(--text); border-radius: 4px 12px 12px 12px; }
+  .msg-bubble.user { background: var(--red); color: #fff; border-radius: 12px 4px 12px 12px; }
+  .chat-input-row { display: flex; gap: 8px; margin-top: 8px; }
+  .chat-input { flex: 1; padding: 10px 16px; border: 1px solid var(--border2); border-radius: 24px; font-size: 13px; background: var(--bg); color: var(--text); outline: none; font-family: inherit; }
+  .chat-input:focus { border-color: var(--red); }
+  .send-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--red); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity 0.15s; }
+  .send-btn:hover { opacity: 0.85; }
+  .send-btn svg { width: 16px; height: 16px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--text2); animation: bounce 1.2s infinite; margin: 0 2px; }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--green); color: #fff; font-size: 13px; padding: 10px 18px; border-radius: var(--radius); opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 9999; font-weight: 600; }
+  .toast.show { opacity: 1; }
+  @media (max-width: 768px) {
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .two-col { grid-template-columns: 1fr; }
+    .detail-grid { grid-template-columns: 1fr 1fr; }
+    .scenario-nums { grid-template-columns: 1fr; }
+    .content { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="3" x2="12" y2="1"/><line x1="12" y1="23" x2="12" y2="21"/><line x1="3" y1="12" x2="1" y2="12"/><line x1="23" y1="12" x2="21" y2="12"/></svg>
+    </div>
+    <div>
+      <div class="logo-text">Silencer Shop — Sales Intelligence</div>
+      <div class="logo-sub">FY2026 Key Account Portfolio</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="sync-badge syncing" id="sync-badge">
+      <div class="sync-dot spin" id="sync-dot"></div>
+      <span id="sync-text">Connecting...</span>
+    </div>
+    <span class="badge-conf">CONFIDENTIAL</span>
+    <button class="btn" onclick="exportCSV()">&#8595; Export CSV</button>
+  </div>
+</div>
+
+<div class="user-bar">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  <span>Your name:</span>
+  <input type="text" id="user-name" placeholder="e.g. Brad Ortiz" maxlength="30" oninput="saveName()">
+  <span style="color:var(--text3)">— shown in the change log when you make edits</span>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showTab('overview')">Portfolio overview</button>
+  <button class="nav-btn" onclick="showTab('accounts')">Account detail</button>
+  <button class="nav-btn" onclick="showTab('scenario')">Scenario modeling</button>
+  <button class="nav-btn" onclick="showTab('changelog')">Change log</button>
+  <button class="nav-btn" onclick="showTab('assistant')">AI assistant</button>
+</nav>
+
+<div class="content">
+
+<!-- OVERVIEW -->
+<div id="tab-overview">
+  <div class="edit-hint">&#9998; Click any value in the table below to edit it. Changes save instantly and sync to all team members.</div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">FY26 revenue forecast</div><div class="kpi-val accent" id="kpi-rev">—</div><div class="kpi-sub">Conservative floor &middot; actuals trend higher</div></div>
+    <div class="kpi"><div class="kpi-label">Live accounts</div><div class="kpi-val">9 <span style="font-size:15px;font-weight:400;color:var(--text2)">/ 9</span></div><div class="kpi-sub">All signed &middot; execution mode</div></div>
+    <div class="kpi"><div class="kpi-label">Doors today &rarr; FY26</div><div class="kpi-val"><span id="kpi-live">—</span> &rarr; <span style="color:var(--red)" id="kpi-target">—</span></div><div class="kpi-sub" id="kpi-new-doors">Loading...</div></div>
+    <div class="kpi"><div class="kpi-label">Initial stocking</div><div class="kpi-val" id="kpi-stock">—</div><div class="kpi-sub" id="kpi-reorders">Loading...</div></div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">&#9632; Revenue by account</div>
+      <div id="rev-bars"><div style="color:var(--text3);font-size:12px;padding:20px 0;text-align:center">Loading...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">&#9651; FY26 themes &amp; priorities</div>
+      <div class="theme-item"><div class="theme-icon red">&#9812;</div><div><div class="theme-title">Revenue anchors</div><div class="theme-desc">Sportsman's (~$22M) and Dunham's (~$14.8M+) drive ~64% of portfolio</div></div></div>
+      <div class="theme-item"><div class="theme-icon amber">&#9670;</div><div><div class="theme-title">Biggest door expansions</div><div class="theme-desc">Dunham's +74 doors, Attwood's +47 doors — both signed and live</div></div></div>
+      <div class="theme-item"><div class="theme-icon green">&#8679;</div><div><div class="theme-title">Academy accelerating</div><div class="theme-desc">+20 stores/month May–Aug &middot; 27 live &rarr; 133 target &middot; ~$11.94M</div></div></div>
+      <div class="theme-item"><div class="theme-icon blue">&#9679;</div><div><div class="theme-title">Kiosk pilot priority</div><div class="theme-desc">Scheels Cedar Park kiosk launching Aug &middot; validate economics for rollout</div></div></div>
+    </div>
+  </div>
+  <div class="card full-card">
+    <div class="card-title" style="justify-content:space-between">
+      <span>&#9776; Full portfolio — click any value to edit</span>
+      <span id="last-edit-label" style="font-size:11px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0"></span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th style="min-width:110px">Account</th>
+          <th>Live now</th>
+          <th>FY26 target</th>
+          <th>New doors</th>
+          <th>Stocking ($M)</th>
+          <th>Reorders</th>
+          <th>FY26 revenue</th>
+          <th>Notes</th>
+        </tr></thead>
+        <tbody id="main-tbody"></tbody>
+        <tfoot id="main-tfoot"></tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ACCOUNTS -->
+<div id="tab-accounts" class="hidden">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+    <select id="acct-select" onchange="renderDetail()" style="font-size:14px;padding:7px 12px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:inherit;font-weight:600">
+      <option value="sportsmans">Sportsman's</option>
+      <option value="dunhams">Dunham's</option>
+      <option value="academy">Academy</option>
+      <option value="attwoods">Attwood's</option>
+      <option value="runnings">Runnings</option>
+      <option value="bigr">Big R</option>
+      <option value="north40">North 40</option>
+      <option value="lmsupply">L&amp;M Supply</option>
+      <option value="scheels">Scheels</option>
+    </select>
+    <button class="btn" onclick="editNotes()">&#9998; Edit notes</button>
+  </div>
+  <div id="detail-content"></div>
+</div>
+
+<!-- SCENARIO -->
+<div id="tab-scenario" class="hidden">
+  <div class="card full-card">
+    <div class="card-title">&#9874; What-if scenario modeler</div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:18px">Drag sliders to model upside or downside scenarios. Baseline reflects live portfolio data.</p>
+    <div class="scenario-row"><label>Sportsman's doors</label><input type="range" min="20" max="150" step="1" value="80" id="s-sprt" oninput="calcScenario()"><span class="scenario-val" id="v-sprt">80</span></div>
+    <div class="scenario-row"><label>Dunham's doors</label><input type="range" min="6" max="259" step="1" value="80" id="s-dunh" oninput="calcScenario()"><span class="scenario-val" id="v-dunh">80</span></div>
+    <div class="scenario-row"><label>Academy doors</label><input type="range" min="27" max="301" step="1" value="133" id="s-acad" oninput="calcScenario()"><span class="scenario-val" id="v-acad">133</span></div>
+    <div class="scenario-row"><label>Attwood's doors</label><input type="range" min="13" max="82" step="1" value="60" id="s-attw" oninput="calcScenario()"><span class="scenario-val" id="v-attw">60</span></div>
+    <div class="scenario-row"><label>Avg stocking/door ($K)</label><input type="range" min="30" max="300" step="1" value="140" id="s-cog" oninput="calcScenario()"><span class="scenario-val" id="v-cog">$140K</span></div>
+    <div class="scenario-out">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px">Scenario vs. current portfolio baseline</div>
+      <div class="scenario-nums">
+        <div><div class="snum-label">Projected doors</div><div class="snum-val" id="sc-doors">—</div><div class="snum-delta" id="sc-doors-d"></div></div>
+        <div><div class="snum-label">Stocking revenue</div><div class="snum-val" id="sc-stock">—</div><div class="snum-delta" id="sc-stock-d"></div></div>
+        <div><div class="snum-label">Total est. revenue</div><div class="snum-val" id="sc-total">—</div><div class="snum-delta" id="sc-total-d"></div></div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--text3);margin-top:12px">All figures are conservative estimates. Reorders held at base projections for fixed accounts.</p>
+  </div>
+</div>
+
+<!-- CHANGELOG -->
+<div id="tab-changelog" class="hidden">
+  <div class="card full-card">
+    <div class="card-title">&#9998; Change log — all edits, all users</div>
+    <div id="changelog-list"><div style="color:var(--text3);font-size:13px;padding:20px 0;text-align:center">Loading change log...</div></div>
+  </div>
+</div>
+
+<!-- ASSISTANT -->
+<div id="tab-assistant" class="hidden">
+  <div class="chat-area">
+    <div class="quick-btns">
+      <button class="quick-btn" onclick="quickAsk('Give me a Dunham\'s meeting prep brief with key talking points and figures')">Dunham's meeting prep</button>
+      <button class="quick-btn" onclick="quickAsk('What are the biggest risks in the FY26 portfolio right now?')">Portfolio risks</button>
+      <button class="quick-btn" onclick="quickAsk('Draft a professional partner-facing follow-up email for Academy Sports')">Academy follow-up email</button>
+      <button class="quick-btn" onclick="quickAsk('Give me a tight executive summary of the FY26 portfolio for leadership')">Exec summary</button>
+      <button class="quick-btn" onclick="quickAsk('Which accounts have TBD reorders and what is the forecasting risk?')">TBD reorder risk</button>
+      <button class="quick-btn" onclick="quickAsk('What is the Scheels kiosk pilot strategy and what does success look like?')">Kiosk pilot status</button>
+      <button class="quick-btn" onclick="quickAsk('Compare Dunham\'s and Academy as expansion opportunities for the rest of FY26')">Dunham's vs Academy</button>
+      <button class="quick-btn" onclick="quickAsk('Give me Sportsman\'s reorder model details and velocity assumptions')">Sportsman's reorder model</button>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="msg">
+        <div class="msg-av ai">SS</div>
+        <div class="msg-bubble ai">Ready. FY2026 portfolio loaded — 9 live accounts, ~$57.5M forecast, all signed. Ask me anything: account briefs, meeting prep, exec summaries, partner emails, or risk flags. I'm grounded in the projection data.</div>
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" type="text" id="chat-in" placeholder="Ask about any account, draft an email, flag a risk..." onkeydown="if(event.key==='Enter')sendMsg()">
+      <button class="send-btn" onclick="sendMsg()" aria-label="Send">
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</div><!-- /shell -->
+
+<div class="toast" id="toast">Saved &amp; synced</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+var JSONBIN_KEY = '$2a$10$2xZBJCxMHqQaJzxjIckpUOsFW5u2ALBpXc9fmUPptShlyDnMLxFYK';
+var BIN_ID = null;
+var POLL_INTERVAL = 15000;
+var pollTimer = null;
+var lastSaveHash = '';
+var currentUser = '';
+var chatHistory = [];
+
+// ── DEFAULT DATA ─────────────────────────────────────────────────────────────
+var DEFAULTS = {
+  sportsmans:{name:"Sportsman's",live:20,target:80,totalStores:150,stocking:3.36,reorders:19,revenue:22,reorderTBD:false,tags:["Top driver","Revenue anchor"],notes:"Highest-revenue account. Reorder cadence is mature — 20–50 units bi-weekly at ~$700 unit COG. Target is 80+ and climbing. Stocking model: $840K per 20-store wave ($3.36M total). ~$19M in reorders projected."},
+  dunhams:{name:"Dunham's",live:6,target:80,totalStores:259,stocking:14.8,reorders:0,revenue:14.8,reorderTBD:true,tags:["Major ramp","Biggest door expansion"],notes:"Largest door expansion: 6 live → 80 target (+74 new doors). First 6 stores stocked at $1.2M ($200K/store avg). Remaining 74 stores → ~$14.8M FY26 stocking. Reorders TBD — key forecasting risk."},
+  academy:{name:"Academy",live:27,target:133,totalStores:301,stocking:10.64,reorders:1.30,revenue:11.94,reorderTBD:false,tags:["Highest velocity","Accelerating"],notes:"Fastest-ramping account. +20 stores/month May–August. 27 live → 133 FY26 target. Stocking: $80K/store. Reorders flowing at ~$25K/week. Total ~$11.94M."},
+  attwoods:{name:"Attwood's",live:13,target:60,totalStores:82,stocking:5.07,reorders:0,revenue:5.07,reorderTBD:true,tags:["60-store push","Door expansion"],notes:"Second-largest door expansion: 13 live → 60 target (+47 new doors). First 13 stores stocked at $1.4M (~$108K/store avg). Remaining 47 stores → ~$5.07M stocking. Reorders TBD."},
+  runnings:{name:"Runnings",live:2,target:15,totalStores:17,stocking:0.49,reorders:0.15,revenue:0.64,reorderTBD:false,tags:["New live","Q1 2027 ramp"],notes:"Newest live account. 2 stores active. 13 more planned Q1 2027. Model: 25 SKUs × 2 qty × ~$650 COG = ~$32.5K/store. Monthly restocks ~$6.3K/store."},
+  bigr:{name:"Big R",live:3,target:20,totalStores:35,stocking:0.20,reorders:0.69,revenue:0.89,reorderTBD:false,tags:["Steady growth"],notes:"Steady growth. 3 live → 20 FY26 target. $12K/store stocking, $5K/month reorders. Reliable contributor at ~$0.89M."},
+  north40:{name:"North 40",live:10,target:15,totalStores:10,stocking:0.02,reorders:0.60,revenue:0.62,reorderTBD:false,tags:["Steady growth","Fully live"],notes:"10 of 10 stores live — highest penetration in portfolio. FY26 target 15 (+5 new doors). Minimal new stocking needed, healthy reorder flow at ~$4K/month."},
+  lmsupply:{name:"L&M Supply",live:1,target:13,totalStores:13,stocking:0.42,reorders:0.07,revenue:0.49,reorderTBD:false,tags:["Steady growth"],notes:"Only 1 of 13 stores live — significant rollout runway. $32K/store stocking, ~$6K/month reorders. Fully signed, clean upside as stores activate."},
+  scheels:{name:"Scheels",live:31,target:32,totalStores:31,stocking:0.005,reorders:0.12,revenue:0.14,reorderTBD:false,tags:["Partial agreement","Kiosk pilot"],notes:"All 31 stores live via staff replenishment (~$5K/order). Partial agreement. Cedar Park kiosk launching August — key FY26 priority. Kiosk success unlocks broader rollout."}
+};
+var KEYS = ['sportsmans','dunhams','academy','attwoods','runnings','bigr','north40','lmsupply','scheels'];
+var DATA = {};
+
+// ── SYNC ─────────────────────────────────────────────────────────────────────
+function setSyncBadge(state, text) {
+  var b = document.getElementById('sync-badge');
+  var d = document.getElementById('sync-dot');
+  b.className = 'sync-badge ' + (state !== 'ok' ? state : '');
+  d.className = 'sync-dot' + (state === 'syncing' ? ' spin' : '');
+  document.getElementById('sync-text').textContent = text;
+}
+
+async function initStorage() {
+  setSyncBadge('syncing', 'Connecting...');
+  // Try to find existing bin
+  try {
+    var res = await fetch('https://api.jsonbin.io/v3/b?collectionId=ss-fy26', {
+      headers: { 'X-Master-Key': JSONBIN_KEY }
+    });
+    // Search for our bin by listing
+    var listRes = await fetch('https://api.jsonbin.io/v3/b', {
+      headers: { 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Meta': 'false' }
+    });
+    if (listRes.ok) {
+      var bins = await listRes.json();
+      // Look for our named bin
+      if (Array.isArray(bins)) {
+        for (var i = 0; i < bins.length; i++) {
+          if (bins[i].record && bins[i].record.name === 'ss-fy26-dashboard') {
+            BIN_ID = bins[i].record.id || bins[i].id;
+            break;
+          }
+        }
+      }
+    }
+  } catch(e) {}
+
+  if (!BIN_ID) {
+    // Check localStorage for a saved bin ID
+    try { BIN_ID = localStorage.getItem('ss-fy26-bin-id'); } catch(e) {}
+  }
+
+  if (BIN_ID) {
+    await loadFromBin();
+  } else {
+    // Create new bin
+    await createBin();
+  }
+  startPolling();
+}
+
+async function createBin() {
+  setSyncBadge('syncing', 'Setting up...');
+  try {
+    var payload = { data: JSON.parse(JSON.stringify(DEFAULTS)), changelog: [] };
+    var res = await fetch('https://api.jsonbin.io/v3/b', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN_KEY,
+        'X-Bin-Name': 'ss-fy26-dashboard',
+        'X-Bin-Private': 'false'
+      },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      var json = await res.json();
+      BIN_ID = json.metadata.id;
+      try { localStorage.setItem('ss-fy26-bin-id', BIN_ID); } catch(e) {}
+      DATA = JSON.parse(JSON.stringify(DEFAULTS));
+      setSyncBadge('ok', 'Ready');
+      renderAll();
+    } else {
+      fallbackLocal();
+    }
+  } catch(e) {
+    fallbackLocal();
+  }
+}
+
+async function loadFromBin() {
+  setSyncBadge('syncing', 'Loading...');
+  try {
+    var res = await fetch('https://api.jsonbin.io/v3/b/' + BIN_ID + '/latest', {
+      headers: { 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Meta': 'false' }
+    });
+    if (res.ok) {
+      var json = await res.json();
+      var record = json.record || json;
+      DATA = record.data || JSON.parse(JSON.stringify(DEFAULTS));
+      // Fill missing keys
+      KEYS.forEach(function(k) { if (!DATA[k]) DATA[k] = JSON.parse(JSON.stringify(DEFAULTS[k])); });
+      lastSaveHash = JSON.stringify(DATA);
+      setSyncBadge('ok', 'Live');
+      renderAll();
+      loadChangelog(record.changelog || []);
+      try { localStorage.setItem('ss-fy26-bin-id', BIN_ID); } catch(e) {}
+    } else {
+      fallbackLocal();
+    }
+  } catch(e) {
+    fallbackLocal();
+  }
+}
+
+async function saveToBin(changeMsg) {
+  if (!BIN_ID) { showToast('Saved locally'); return; }
+  setSyncBadge('syncing', 'Saving...');
+  var changelog = [];
+  try {
+    var cur = await fetch('https://api.jsonbin.io/v3/b/' + BIN_ID + '/latest', {
+      headers: { 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Meta': 'false' }
+    });
+    if (cur.ok) {
+      var j = await cur.json();
+      var rec = j.record || j;
+      changelog = rec.changelog || [];
+    }
+  } catch(e) {}
+  if (changeMsg) {
+    var now = new Date();
+    var ts = now.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    changelog.unshift({ ts: ts, user: currentUser || 'Team member', msg: changeMsg });
+    if (changelog.length > 60) changelog = changelog.slice(0, 60);
+  }
+  try {
+    var payload = { data: DATA, changelog: changelog };
+    var res = await fetch('https://api.jsonbin.io/v3/b/' + BIN_ID, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      lastSaveHash = JSON.stringify(DATA);
+      setSyncBadge('ok', 'Saved');
+      showToast('Saved & synced to all users');
+      setTimeout(function() { setSyncBadge('ok', 'Live'); }, 3000);
+      loadChangelog(changelog);
+    } else {
+      setSyncBadge('error', 'Save failed');
+    }
+  } catch(e) {
+    setSyncBadge('error', 'Offline');
+  }
+}
+
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async function() {
+    if (!BIN_ID) return;
+    try {
+      var res = await fetch('https://api.jsonbin.io/v3/b/' + BIN_ID + '/latest', {
+        headers: { 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Meta': 'false' }
+      });
+      if (res.ok) {
+        var j = await res.json();
+        var rec = j.record || j;
+        var newHash = JSON.stringify(rec.data);
+        if (newHash !== lastSaveHash && newHash !== JSON.stringify(DATA)) {
+          DATA = rec.data || DATA;
+          KEYS.forEach(function(k) { if (!DATA[k]) DATA[k] = JSON.parse(JSON.stringify(DEFAULTS[k])); });
+          lastSaveHash = newHash;
+          renderAll();
+          loadChangelog(rec.changelog || []);
+          setSyncBadge('ok', 'Updated');
+          setTimeout(function() { setSyncBadge('ok', 'Live'); }, 2000);
+        }
+      }
+    } catch(e) {}
+  }, POLL_INTERVAL);
+}
+
+function fallbackLocal() {
+  DATA = JSON.parse(JSON.stringify(DEFAULTS));
+  setSyncBadge('error', 'Local only');
+  renderAll();
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function renderAll() {
+  buildTable();
+  buildRevBars();
+  updateKPIs();
+  calcScenario();
+}
+
+function fmtM(n, d) { d = d === undefined ? 2 : d; return '$' + parseFloat(n).toFixed(d) + 'M'; }
+function fmtN(n, d) { d = d === undefined ? 2 : d; return parseFloat(n).toFixed(d); }
+
+function calcTotals() {
+  var live=0, target=0, stock=0, reorders=0, revenue=0;
+  KEYS.forEach(function(k) {
+    var a = DATA[k];
+    live += +a.live; target += +a.target;
+    stock += +a.stocking; reorders += +a.reorders; revenue += +a.revenue;
+  });
+  return { live:live, target:target, stock:parseFloat(stock.toFixed(2)), reorders:parseFloat(reorders.toFixed(2)), revenue:parseFloat(revenue.toFixed(2)) };
+}
+
+function updateKPIs() {
+  var t = calcTotals();
+  document.getElementById('kpi-rev').textContent = '~' + fmtM(t.revenue, 1);
+  document.getElementById('kpi-live').textContent = t.live;
+  document.getElementById('kpi-target').textContent = t.target;
+  document.getElementById('kpi-new-doors').textContent = '+' + (t.target - t.live) + ' new doors projected';
+  document.getElementById('kpi-stock').textContent = fmtM(t.stock);
+  document.getElementById('kpi-reorders').textContent = '+ ~' + fmtM(t.reorders) + '+ reorders';
+}
+
+function buildRevBars() {
+  var c = document.getElementById('rev-bars');
+  if (!c || !DATA.sportsmans) return;
+  var maxRev = Math.max.apply(null, KEYS.map(function(k) { return DATA[k].revenue; })) || 1;
+  c.innerHTML = KEYS.map(function(k) {
+    var a = DATA[k];
+    var pct = Math.round((a.revenue / maxRev) * 100);
+    return '<div class="acct-row-bar" onclick="goDetail(\'' + k + '\')">' +
+      '<div class="status-dot"></div>' +
+      '<div class="acct-name-bar">' + a.name + '</div>' +
+      '<div class="acct-bar-wrap"><div class="acct-bar" style="width:' + pct + '%"></div></div>' +
+      '<div class="acct-rev-label">' + fmtM(a.revenue) + (a.reorderTBD ? ' <span class="pill tbd" style="font-size:9px">TBD+</span>' : '') + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function buildTable() {
+  if (!DATA.sportsmans) return;
+  var tbody = document.getElementById('main-tbody');
+  var tfoot = document.getElementById('main-tfoot');
+  tbody.innerHTML = '';
+  KEYS.forEach(function(k) {
+    var a = DATA[k];
+    var nd = a.target - a.live;
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td style="font-weight:600">' + a.name + '</td>' +
+      '<td><span class="editable" contenteditable="false" data-key="' + k + '" data-field="live" onclick="startEdit(this)">' + a.live + '</span></td>' +
+      '<td><span class="editable" contenteditable="false" data-key="' + k + '" data-field="target" onclick="startEdit(this)">' + a.target + '</span></td>' +
+      '<td style="color:' + (nd > 0 ? 'var(--red)' : 'var(--text2)') + ';font-weight:600">' + (nd > 0 ? '+' : '') + nd + '</td>' +
+      '<td><span class="editable" contenteditable="false" data-key="' + k + '" data-field="stocking" onclick="startEdit(this)">' + fmtN(a.stocking) + 'M</span></td>' +
+      '<td>' + (a.reorderTBD ? '<span class="pill tbd">TBD</span>' : '<span class="editable" contenteditable="false" data-key="' + k + '" data-field="reorders" onclick="startEdit(this)">~' + fmtN(a.reorders) + 'M</span>') + '</td>' +
+      '<td style="color:var(--red);font-weight:700"><span class="editable" contenteditable="false" data-key="' + k + '" data-field="revenue" onclick="startEdit(this)">~' + fmtN(a.revenue) + 'M</span></td>' +
+      '<td><span class="pill info" onclick="goDetailEdit(\'' + k + '\')">&#9998; edit</span></td>';
+    tbody.appendChild(tr);
+  });
+  var t = calcTotals();
+  tfoot.innerHTML = '<tr><td>Portfolio total</td><td>' + t.live + '</td><td>' + t.target + '</td><td>+' + (t.target - t.live) + '</td><td>' + fmtM(t.stock) + '</td><td>~' + fmtM(t.reorders) + '</td><td style="color:var(--red)">~' + fmtM(t.revenue, 1) + '</td><td></td></tr>';
+}
+
+function startEdit(el) {
+  if (el.dataset.editing) return;
+  el.dataset.editing = '1';
+  var key = el.dataset.key;
+  var field = el.dataset.field;
+  var isInt = (field === 'live' || field === 'target');
+  var prev = DATA[key][field];
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = parseFloat(prev).toFixed(isInt ? 0 : 2);
+  inp.style.cssText = 'font-size:13px;border:none;background:transparent;color:var(--text);font-family:inherit;width:' + (isInt ? '50px' : '70px') + ';outline:none;border-bottom:2px solid var(--red);';
+  el.textContent = '';
+  el.appendChild(inp);
+  inp.focus(); inp.select();
+  function commit() {
+    delete el.dataset.editing;
+    var v = parseFloat(inp.value);
+    if (!isNaN(v) && v >= 0 && v !== prev) {
+      DATA[key][field] = v;
+      var msg = DATA[key].name + ': "' + field + '" changed ' + prev + ' → ' + v;
+      document.getElementById('last-edit-label').textContent = 'Last edit: ' + msg;
+      saveToBin(msg);
+      buildRevBars(); updateKPIs(); calcScenario();
+    }
+    buildTable();
+  }
+  inp.addEventListener('blur', commit);
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') inp.blur();
+    if (e.key === 'Escape') { delete el.dataset.editing; buildTable(); }
+  });
+}
+
+function renderDetail() {
+  var key = document.getElementById('acct-select').value;
+  var a = DATA[key];
+  if (!a) return;
+  var nd = a.target - a.live;
+  var pct = Math.round((a.live / Math.max(a.totalStores, a.live)) * 100);
+  document.getElementById('detail-content').innerHTML =
+    '<div class="detail-grid">' +
+    '<div class="detail-kpi"><div class="detail-kpi-label">FY26 revenue <button class="edit-field-btn" onclick="editFieldDirect(\'' + key + '\',\'revenue\',this)">&#9998; edit</button></div><div class="detail-kpi-val" style="color:var(--red)">~' + fmtN(a.revenue) + 'M' + (a.reorderTBD ? '+' : '') + '</div></div>' +
+    '<div class="detail-kpi"><div class="detail-kpi-label">Live &rarr; target <button class="edit-field-btn" onclick="editFieldDirect(\'' + key + '\',\'live\',this)">&#9998; edit</button></div><div class="detail-kpi-val">' + a.live + ' &rarr; ' + a.target + '</div></div>' +
+    '<div class="detail-kpi"><div class="detail-kpi-label">New doors FY26</div><div class="detail-kpi-val">+' + nd + '</div></div>' +
+    '<div class="detail-kpi"><div class="detail-kpi-label">Initial stocking <button class="edit-field-btn" onclick="editFieldDirect(\'' + key + '\',\'stocking\',this)">&#9998; edit</button></div><div class="detail-kpi-val">' + fmtM(a.stocking) + '</div></div>' +
+    '<div class="detail-kpi"><div class="detail-kpi-label">Reorders (FY26)</div><div class="detail-kpi-val">' + (a.reorderTBD ? '<span class="pill tbd">TBD</span>' : '~' + fmtM(a.reorders)) + '</div></div>' +
+    '<div class="detail-kpi"><div class="detail-kpi-label">Store penetration</div><div class="detail-kpi-val">' + pct + '%</div></div>' +
+    '</div>' +
+    '<div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap">' + a.tags.map(function(t) { return '<span class="pill live">' + t + '</span>'; }).join('') + '</div>' +
+    '<div class="notes-box" id="notes-display">' + (a.notes || 'No notes yet. Click "Edit notes" to add.') + '</div>' +
+    '<div class="action-btns">' +
+    '<button class="btn" onclick="quickAskSwitch(\'Give me meeting prep talking points for ' + a.name + '\')">Meeting prep</button>' +
+    '<button class="btn" onclick="quickAskSwitch(\'Draft a partner-facing follow-up email for ' + a.name + '\')">Draft email</button>' +
+    '<button class="btn" onclick="quickAskSwitch(\'What are the key risks and opportunities for ' + a.name + ' in FY26?\')">Risks &amp; opps</button>' +
+    '</div>';
+}
+
+function editFieldDirect(key, field, btn) {
+  var a = DATA[key];
+  var prev = a[field];
+  var isInt = (field === 'live' || field === 'target');
+  var container = btn.closest('.detail-kpi');
+  var valEl = container.querySelector('.detail-kpi-val');
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = parseFloat(prev).toFixed(isInt ? 0 : 2);
+  inp.style.cssText = 'font-size:18px;font-weight:700;width:100px;border:none;background:transparent;color:var(--text);font-family:inherit;outline:none;border-bottom:2px solid var(--red);';
+  valEl.innerHTML = ''; valEl.appendChild(inp); inp.focus(); inp.select();
+  function commit() {
+    var v = parseFloat(inp.value);
+    if (!isNaN(v) && v >= 0 && v !== prev) {
+      DATA[key][field] = v;
+      var msg = DATA[key].name + ': "' + field + '" changed ' + prev + ' → ' + v;
+      saveToBin(msg); buildTable(); buildRevBars(); updateKPIs(); calcScenario();
+    }
+    renderDetail();
+  }
+  inp.addEventListener('blur', commit);
+  inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') renderDetail(); });
+}
+
+function editNotes() {
+  var key = document.getElementById('acct-select').value;
+  var nd = document.getElementById('notes-display');
+  if (!nd) return;
+  var prev = DATA[key].notes;
+  var ta = document.createElement('textarea');
+  ta.className = 'notes-textarea';
+  ta.value = prev;
+  nd.replaceWith(ta); ta.focus();
+  function save() {
+    var v = ta.value.trim();
+    if (v !== prev) {
+      DATA[key].notes = v;
+      saveToBin(DATA[key].name + ': notes updated');
+    }
+    renderDetail();
+  }
+  ta.addEventListener('blur', save);
+  ta.addEventListener('keydown', function(e) { if (e.key === 'Escape') save(); });
+}
+
+function loadChangelog(logs) {
+  var el = document.getElementById('changelog-list');
+  if (!el) return;
+  if (!logs || logs.length === 0) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:20px 0;text-align:center">No changes logged yet. Edits will appear here.</div>';
+    return;
+  }
+  el.innerHTML = logs.map(function(l) {
+    return '<div class="changelog-item"><span class="cl-time">' + l.ts + '</span><span class="cl-user">' + (l.user || 'Team') + '</span><span class="cl-msg">' + l.msg + '</span></div>';
+  }).join('');
+}
+
+function calcScenario() {
+  if (!DATA.sportsmans) return;
+  var t = calcTotals();
+  var BASE = { doors: t.target, stock: t.stock, total: t.revenue };
+  var sp = +document.getElementById('s-sprt').value;
+  var du = +document.getElementById('s-dunh').value;
+  var ac = +document.getElementById('s-acad').value;
+  var at = +document.getElementById('s-attw').value;
+  var cog = +document.getElementById('s-cog').value / 1000;
+  document.getElementById('v-sprt').textContent = sp;
+  document.getElementById('v-dunh').textContent = du;
+  document.getElementById('v-acad').textContent = ac;
+  document.getElementById('v-attw').textContent = at;
+  document.getElementById('v-cog').textContent = '$' + document.getElementById('s-cog').value + 'K';
+  var fixed = DATA.runnings.target + DATA.north40.target + DATA.lmsupply.target + DATA.scheels.target + DATA.bigr.target;
+  var scenDoors = sp + du + ac + at + fixed;
+  var scenStock = parseFloat(((sp + du + ac + at) * cog + DATA.runnings.stocking + DATA.north40.stocking + DATA.lmsupply.stocking + DATA.scheels.stocking + DATA.bigr.stocking).toFixed(2));
+  var scenTotal = parseFloat((scenStock + DATA.sportsmans.reorders + DATA.academy.reorders + DATA.runnings.reorders + DATA.bigr.reorders + DATA.north40.reorders + DATA.lmsupply.reorders + DATA.scheels.reorders).toFixed(2));
+  var dd = scenDoors - BASE.doors;
+  var ds = parseFloat((scenStock - BASE.stock).toFixed(2));
+  var dt = parseFloat((scenTotal - BASE.total).toFixed(2));
+  document.getElementById('sc-doors').textContent = scenDoors;
+  document.getElementById('sc-stock').textContent = '$' + scenStock.toFixed(2) + 'M';
+  document.getElementById('sc-total').textContent = '$' + scenTotal.toFixed(1) + 'M';
+  document.getElementById('sc-doors-d').innerHTML = dd === 0 ? '<span class="muted">= baseline</span>' : '<span class="' + (dd > 0 ? 'pos' : 'neg') + '">' + (dd > 0 ? '+' : '') + dd + ' vs baseline</span>';
+  document.getElementById('sc-stock-d').innerHTML = ds === 0 ? '<span class="muted">= baseline</span>' : '<span class="' + (ds > 0 ? 'pos' : 'neg') + '">' + (ds > 0 ? '+' : '') + ds.toFixed(2) + 'M vs baseline</span>';
+  document.getElementById('sc-total-d').innerHTML = dt === 0 ? '<span class="muted">= baseline</span>' : '<span class="' + (dt > 0 ? 'pos' : 'neg') + '">' + (dt > 0 ? '+' : '') + dt.toFixed(1) + 'M vs baseline</span>';
+}
+
+function goDetail(key) { showTab('accounts'); document.getElementById('acct-select').value = key; renderDetail(); }
+function goDetailEdit(key) { goDetail(key); setTimeout(editNotes, 120); }
+function quickAskSwitch(q) { showTab('assistant'); setTimeout(function() { document.getElementById('chat-in').value = q; sendMsg(); }, 80); }
+
+function showTab(name) {
+  var tabs = ['overview','accounts','scenario','changelog','assistant'];
+  tabs.forEach(function(t) { document.getElementById('tab-' + t).classList.toggle('hidden', t !== name); });
+  document.querySelectorAll('.nav-btn').forEach(function(b, i) { b.classList.toggle('active', tabs[i] === name); });
+  if (name === 'accounts') renderDetail();
+  if (name === 'scenario') calcScenario();
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg || 'Saved & synced';
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+function saveName() {
+  currentUser = document.getElementById('user-name').value.trim();
+  try { localStorage.setItem('ss-username', currentUser); } catch(e) {}
+}
+
+function loadName() {
+  try {
+    var n = localStorage.getItem('ss-username');
+    if (n) { currentUser = n; document.getElementById('user-name').value = n; }
+  } catch(e) {}
+}
+
+function exportCSV() {
+  if (!DATA.sportsmans) return;
+  var lines = ['Silencer Shop — FY2026 Key Account Portfolio', 'Exported: ' + new Date().toLocaleDateString(), '', 'Account,Live Doors,FY26 Target,New Doors,Stocking ($M),Reorders,Revenue ($M),Notes'];
+  KEYS.forEach(function(k) {
+    var a = DATA[k];
+    lines.push([a.name, a.live, a.target, (a.target - a.live), a.stocking.toFixed(2), (a.reorderTBD ? 'TBD' : a.reorders.toFixed(2)), a.revenue.toFixed(2), '"' + (a.notes || '').replace(/"/g, '""') + '"'].join(','));
+  });
+  var t = calcTotals();
+  lines.push(['TOTAL', t.live, t.target, (t.target - t.live), t.stock.toFixed(2), '~' + t.reorders.toFixed(2), t.revenue.toFixed(2), ''].join(','));
+  var blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'SilencerShop_FY26_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+}
+
+// ── AI ASSISTANT ──────────────────────────────────────────────────────────────
+var SYSTEM = 'You are a dedicated sales intelligence assistant for Silencer Shop\'s key account team.\n\nFY2026 Portfolio — 9 live accounts, all signed agreements, execution mode.\n\nACCOUNT DATA:\nSportsman\'s: 20 live → 80+ target. Stocking $3.36M ($840K/20-store wave). Reorders ~$19M bi-weekly @~$700 COG. FY26 ~$22M. TOP revenue driver.\nDunham\'s: 6 live → 80 target (+74 new doors). Stocking $14.8M ($200K/store). Reorders TBD. FY26 ~$14.8M+. BIGGEST door expansion. TBD = forecasting risk.\nAcademy: 27 live → 133+ target (+106 doors). Stocking $10.64M ($80K/store). Reorders ~$1.30M ($25K/wk). FY26 ~$11.94M. HIGHEST velocity: +20 stores/month May–Aug.\nAttwood\'s: 13 live → 60 target (+47 doors). Stocking $5.07M (~$108K/store avg). Reorders TBD. FY26 ~$5.07M+. Second biggest door expansion.\nRunnings (NEW): 2 live → 15 target. Stocking $0.49M (~$32.5K/store). Reorders ~$0.15M. FY26 ~$0.64M. 13 more stores Q1 2027.\nBig R: 3 live → 20 target. Stocking $0.20M ($12K/store). Reorders ~$0.69M ($5K/mo). FY26 ~$0.89M.\nNorth 40: 10/10 stores live (full penetration). 15 target. Stocking $0.02M. Reorders ~$0.60M ($4K/mo). FY26 ~$0.62M.\nL&M Supply: 1 live → 13 target. Stocking $0.42M ($32K/store). Reorders ~$0.07M ($6K/mo). FY26 ~$0.49M.\nScheels: 31 live → 32+ target. Staff replenishment ~$5K/order. Reorders ~$120K. FY26 ~$140K. PARTIAL agreement. Cedar Park KIOSK pilot August — key FY26 strategic priority. Kiosk success unlocks broader multi-store rollout.\n\nPORTFOLIO TOTAL: 113 live → 450 projected. +337 new doors. $34.96M stocking + ~$21.92M reorders = ~$57.5M FY26 forecast.\n\nKEY RULES:\n- Lead with the bottom line, then support with detail\n- Always cite specific figures from the data\n- Flag TBD items as forecasting risks\n- All figures are conservative floor — actuals trend higher\n- Keep responses tight and actionable — this team moves fast\n- For partner-facing content, use professional confident tone\n- For leadership/VP requests, be board-ready and crisp\n- FY26 priority: kiosk pilot validation at Scheels Cedar Park (August launch)';
+
+function sendMsg() {
+  var inp = document.getElementById('chat-in');
+  var q = inp.value.trim();
+  if (!q) return;
+  inp.value = '';
+  appendMsg('user', q);
+  chatHistory.push({ role: 'user', content: q });
+  var tid = appendThinking();
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: SYSTEM, messages: chatHistory })
+  }).then(function(r) { return r.json(); }).then(function(d) {
+    var reply = (d.content || []).filter(function(b) { return b.type === 'text'; }).map(function(b) { return b.text; }).join('');
+    removeThinking(tid);
+    appendMsg('ai', reply);
+    chatHistory.push({ role: 'assistant', content: reply });
+  }).catch(function() {
+    removeThinking(tid);
+    appendMsg('ai', 'Unable to reach the API. Please check your connection and try again.');
+  });
+}
+
+function quickAsk(q) { showTab('assistant'); setTimeout(function() { document.getElementById('chat-in').value = q; sendMsg(); }, 60); }
+
+function appendMsg(role, text) {
+  var c = document.getElementById('chat-messages');
+  var d = document.createElement('div');
+  d.className = 'msg ' + role;
+  d.innerHTML = '<div class="msg-av ' + role + '">' + (role === 'ai' ? 'SS' : 'You') + '</div><div class="msg-bubble ' + role + '">' + text.replace(/\n/g, '<br>') + '</div>';
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+function appendThinking() {
+  var c = document.getElementById('chat-messages');
+  var id = 'tk' + Date.now();
+  var d = document.createElement('div');
+  d.className = 'msg'; d.id = id;
+  d.innerHTML = '<div class="msg-av ai">SS</div><div class="msg-bubble ai"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>';
+  c.appendChild(d); c.scrollTop = c.scrollHeight; return id;
+}
+function removeThinking(id) { var el = document.getElementById(id); if (el) el.remove(); }
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loadName();
+initStorage();
+</script>
+</body>
+</html>
