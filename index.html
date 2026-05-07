@@ -804,14 +804,18 @@ function sendMsg() {
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: SYSTEM, messages: chatHistory })
-  }).then(function(r) { return r.json(); }).then(function(d) {
+  }).then(function(r) {
+    if (!r.ok) { return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t); }); }
+    return r.json();
+  }).then(function(d) {
     var reply = (d.content || []).filter(function(b) { return b.type === 'text'; }).map(function(b) { return b.text; }).join('');
+    if (!reply) reply = 'No response content received.';
     removeThinking(tid);
     appendMsg('ai', reply);
     chatHistory.push({ role: 'assistant', content: reply });
-  }).catch(function() {
+  }).catch(function(err) {
     removeThinking(tid);
-    appendMsg('ai', 'Unable to reach the API. Please check your connection and try again.');
+    appendMsg('ai', 'Error: ' + (err && err.message ? err.message : 'CORS block — try opening the dashboard directly in Chrome: https://jimboslice72.github.io/ka-dashboard-fy26'));
   });
 }
 
